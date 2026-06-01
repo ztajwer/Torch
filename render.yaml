@@ -1,0 +1,19 @@
+# Render Blueprint — free web service (https://render.com)
+# Connect your GitHub repo → New Blueprint → select this file
+services:
+  - type: web
+    name: torch
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: TORCH_ENVIRONMENT
+        value: production
+      - key: TORCH_SERVE_STATIC
+        value: "true"
+      - key: TORCH_CORS_ORIGINS
+        value: "*"
+      - key: TORCH_GEMINI_API_KEY
+        sync: false
+      - key: TORCH_GEMINI_MODEL
+        value: gemini-2.0-flash
