@@ -137,11 +137,33 @@ const API_BASE =
   (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") ??
   (import.meta.env.DEV ? "" : "");
 
+function apiErrorMessage(status: number, detail: string): string {
+  const d = detail.trim();
+  if (status === 404) {
+    return import.meta.env.DEV
+      ? "Backend not reachable (404). Run .\\start.ps1 or start the API on port 8010."
+      : "API not found (404). Check that the backend is deployed and VITE_API_BASE is correct.";
+  }
+  if (status === 502 || status === 503 || status === 504) {
+    return "Backend is starting or unavailable. Wait a few seconds and try again.";
+  }
+  return d || `HTTP ${status}`;
+}
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+    });
+  } catch {
+    throw new Error(
+      import.meta.env.DEV
+        ? "Cannot reach the server. Run .\\start.ps1 from the project root (backend on port 8010)."
+        : "Cannot reach the server. Check your network and API URL."
+    );
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     let detail = text;
@@ -151,7 +173,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* keep raw text */
     }
-    throw new Error(detail || `HTTP ${res.status}`);
+    throw new Error(apiErrorMessage(res.status, detail));
   }
   return (await res.json()) as T;
 }

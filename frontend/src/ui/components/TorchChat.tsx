@@ -83,11 +83,16 @@ export function TorchChat() {
       setMessages((prev) => [...prev, { role: "assistant", content: res.reply }]);
       if (res.products?.length) setHints(res.products);
     } catch (e) {
+      const msg = (e as Error).message;
+      const needsBackend = /backend|8010|start\.ps1|Cannot reach/i.test(msg);
+      const hint = needsBackend
+        ? "Run **.\\start.ps1** from the project folder, then open http://127.0.0.1:5173"
+        : "If chat works but AI feels limited, add a fresh **TORCH_GEMINI_API_KEY** in `.env` (https://aistudio.google.com/apikey).";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `Sorry, I couldn't respond. ${(e as Error).message}\n\nMake sure the backend is running and **TORCH_GEMINI_API_KEY** is set in .env.`,
+          content: `Sorry, I couldn't respond. ${msg}\n\n${hint}`,
         },
       ]);
     } finally {
